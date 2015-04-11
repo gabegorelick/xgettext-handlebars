@@ -1,37 +1,35 @@
 {
-  "name": "gettext-handlebars",
-  "version": "0.3.0",
+  "name": "xgettext-handlebars",
+  "version": "0.0.0",
   "description": "Extract translatable strings from Handlebars templates",
-  "main": "index.js",
-  "directories": {
-    "test": "test"
-  },
-  "scripts": {
-    "test": "jshint index.js test/index.js && mocha"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/smhg/gettext-handlebars.git"
-  },
+  "author": "Gabe Gorelick",
+  "license": "MIT",
   "keywords": [
     "handlebars",
+    "xgettext",
     "gettext",
     "hbs",
     "i18n",
     "translate",
     "translation"
   ],
-  "author": "Sam Hauglustaine",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/smhg/gettext-handlebars/issues"
+  "homepage": "https://github.com/gabegorelick/xgettext-handlebars",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gabegorelick/xgettext-handlebars"
   },
-  "homepage": "https://github.com/smhg/gettext-handlebars",
+  "bugs": {
+    "url": "https://github.com/gabegorelick/xgettext-handlebars/issues"
+  },
+  "main": "./index.js",
+  "dependencies": {
+    "handlebars": "^2.0.0"
+  },
   "devDependencies": {
     "jshint": "^2.6.3",
     "mocha": "^2.2.1"
   },
-  "dependencies": {
-    "handlebars": "^2.0.0"
+  "scripts": {
+    "test": "jshint index.js test/index.js && mocha"
   }
 }

@@ -1,8 +1,6 @@
-# gettext-handlebars [![build status](https://secure.travis-ci.org/smhg/gettext-handlebars.png)](http://travis-ci.org/smhg/gettext-handlebars)
+# xgettext-handlebars
 
-Extract translatable strings from [Handlebars](http://handlebarsjs.com/) template strings.
-
-It can be used stand-alone or through [gmarty/gettext](https://github.com/gmarty/xgettext).
+Extract translatable strings from [Handlebars](http://handlebarsjs.com) templates.
 
 ### API
 
@@ -29,7 +27,7 @@ For example `npgettext: ['msgctxt', 'msgid', 'msgid_plural']` indicates that the
 `npgettext` handlebars helper takes arguments of form `{{npgettext "context" "string" "plural" ...}}`
 
 #### .parse(template)
-Parses the `template` string for Handlebars expressions using the keywordspec.
+Parses the string `template` for Handlebars expressions using the keywordspec.
 It returns an object with this structure:
 ```javascript
 {
