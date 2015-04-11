@@ -127,40 +127,40 @@ Parser.prototype.parse = function (template) {
             var plural = pluralParam.string;
             var existingPlural = msgs[key].msgid_plural;
             if (plural && existingPlural && existingPlural !== plural) {
-                throw new Error('Incompatible plural definitions for msgid "' + msgid +
-                  '" ("' + msgs[key].msgid_plural + '" and "' + plural + '")');
+              throw new Error('Incompatible plural definitions for msgid "' + msgid +
+                '" ("' + msgs[key].msgid_plural + '" and "' + plural + '")');
             }
-                }
-
-            msgs[key].line.push(statement.firstLine);
-
-            spec.forEach(function(prop, i) {
-              var param = params[i];
-              if (param && param.type === 'STRING') {
-                msgs[key][prop] = params[i].string;
-              }
-            });
-
-            // maintain backwards compatibility with plural output
-            msgs[key].plural = msgs[key].msgid_plural;
           }
-        }
 
-        statement.params.reduce(collectMsgs, msgs);
-      } else if (statement.type === 'block') {
-        if (statement.program) {
-          statement.program.statements.reduce(collectMsgs, msgs);
-        }
+          msgs[key].line.push(statement.firstLine);
 
-        if (statement.inverse) {
-          statement.inverse.statements.reduce(collectMsgs, msgs);
+          spec.forEach(function(prop, i) {
+            var param = params[i];
+            if (param && param.type === 'STRING') {
+              msgs[key][prop] = params[i].string;
+            }
+          });
+
+          // maintain backwards compatibility with plural output
+          msgs[key].plural = msgs[key].msgid_plural;
         }
       }
 
-      return msgs;
-    };
+      statement.params.reduce(collectMsgs, msgs);
+    } else if (statement.type === 'block') {
+      if (statement.program) {
+        statement.program.statements.reduce(collectMsgs, msgs);
+      }
 
-    return tree.statements.reduce(collectMsgs, {});
+      if (statement.inverse) {
+        statement.inverse.statements.reduce(collectMsgs, msgs);
+      }
+    }
+
+    return msgs;
   };
+
+  return tree.statements.reduce(collectMsgs, {});
+};
 
 module.exports = Parser;
