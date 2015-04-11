@@ -2,6 +2,9 @@
 
 > Extract translatable strings from [Handlebars](http://handlebarsjs.com) templates.
 
+## Warning
+**This code is unstable and going through a major rewrite.**
+
 ## API
 
 ### `new Parser(keywordspec)`
