@@ -45,3 +45,6 @@ It returns an object with this structure:
   }
 }
 ```
+
+## License
+MIT
