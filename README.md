@@ -1,10 +1,11 @@
 # xgettext-handlebars
 
-Extract translatable strings from [Handlebars](http://handlebarsjs.com) templates.
+> Extract translatable strings from [Handlebars](http://handlebarsjs.com) templates.
 
-### API
+## API
 
-#### new Parser(keywordspec)
+### `new Parser(keywordspec)`
+
 Creates a new parser.
 The `keywordspec` parameter is optional, with the default being:
 ```javascript
@@ -26,7 +27,8 @@ Each keyword (key) requires array of strings indicating the order of expected PO
 For example `npgettext: ['msgctxt', 'msgid', 'msgid_plural']` indicates that the
 `npgettext` handlebars helper takes arguments of form `{{npgettext "context" "string" "plural" ...}}`
 
-#### .parse(template)
+### `.parse(template)`
+
 Parses the string `template` for Handlebars expressions using the keywordspec.
 It returns an object with this structure:
 ```javascript
@@ -38,7 +40,7 @@ It returns an object with this structure:
     line: [2],
     plural: 'msgid_plural'
   },
-  context\u0004msgid2: {
+  "context\u0004msgid2": {
     line: [4]
   }
 }
