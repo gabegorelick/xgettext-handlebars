@@ -9,21 +9,6 @@ describe('Parser', function () {
     it('should have default keyword spec when none is passed', function () {
       assert(new Parser().keywordSpec.gettext.length > 0);
     });
-
-    it('should convert int params to strings', function () {
-      assert.deepEqual(new Parser({_: [0]}).keywordSpec, {_: ['msgid']});
-      assert.deepEqual(new Parser({n_: [0, 1]}).keywordSpec, {n_: ['msgid', 'msgid_plural']});
-
-      var spec = new Parser({n_: [2, 1]}).keywordSpec.n_;
-      assert.equal(spec.length, 3);
-      assert.equal(spec[1], 'msgid_plural');
-      assert.equal(spec[2], 'msgid');
-
-      spec = new Parser({n_: [1, 2]}).keywordSpec.n_;
-      assert.equal(spec.length, 3);
-      assert.equal(spec[1], 'msgid');
-      assert.equal(spec[2], 'msgid_plural');
-    });
   });
 
   describe('#parse()', function () {
@@ -54,7 +39,7 @@ describe('Parser', function () {
         var result = new Parser().parse(data);
 
         assert.equal(Object.keys(result).length, 2);
-        assert.equal(result['default'].plural, 'defaults');
+        assert.equal(result['default'].msgid_plural, 'defaults');
 
         done();
       });
@@ -82,9 +67,9 @@ describe('Parser', function () {
 
         assert('subexpression' in result);
         assert('%s subexpression' in result);
-        assert.equal(result['%s subexpression'].plural, '%s subexpressions');
+        assert.equal(result['%s subexpression'].msgid_plural, '%s subexpressions');
         assert('%s %s subexpression' in result);
-        assert.equal(result['%s %s subexpression'].plural, '%s %s subexpressions');
+        assert.equal(result['%s %s subexpression'].msgid_plural, '%s %s subexpressions');
         assert('second' in result);
         assert('regular' in result);
         assert('%s %s other' in result);
@@ -101,7 +86,7 @@ describe('Parser', function () {
           throw err;
         }
 
-        var result = new Parser({_: [1, 2]}).parse(data);
+        var result = new Parser({_: ['variable', 'msgid', 'msgid_plural']}).parse(data);
 
         assert.equal(result.msgid.msgid, 'msgid');
         assert.equal(result.msgid.msgid_plural, 'plural');
@@ -130,13 +115,11 @@ describe('Parser', function () {
         assert(key in result);
         assert.equal(result[key].msgctxt, 'noun');
         assert.equal(result[key].msgid_plural, 'files');
-        assert.equal(result[key].plural, 'files');
 
         key = Parser.messageToKey('file', 'verb');
         assert(key in result);
         assert.equal(result[key].msgctxt, 'verb');
         assert.equal(result[key].msgid_plural, 'files');
-        assert.equal(result[key].plural, 'files');
 
         assert.equal(4, Object.keys(result).length);
 

@@ -27,34 +27,6 @@ function Parser (keywordSpec) {
     np_: npgettextSpec
   };
 
-  // maintain backwards compatibility with `_: [0]` format
-  keywordSpec = Object.keys(keywordSpec).reduce(function (spec, keyword) {
-    spec[keyword] = keywordSpec[keyword].reduce(function (a, param, index) {
-      if (typeof param === 'number') {
-        if (param > a.length) {
-          // grow array
-          for (var i = 0; i < param - a.length; i++) {
-            a.push('ignored' + i);
-          }
-        }
-
-        if (index === 0) {
-          a[param] = 'msgid';
-        } else if (index === 1) {
-          a[param] = 'msgid_plural';
-        } else {
-          throw new Error('Too many integers passed for keyword ' + keyword);
-        }
-      } else {
-        a.push(param);
-      }
-
-      return a;
-    }, []);
-
-    return spec;
-  }, {});
-
   Object.keys(keywordSpec).forEach(function (keyword) {
     if (keywordSpec[keyword].indexOf('msgid') === -1) {
       throw new Error('Every keyword must have a msgid parameter, but "' + keyword + '" doesn\'t have one');
@@ -140,9 +112,6 @@ Parser.prototype.parse = function (template) {
               msgs[key][prop] = params[i].string;
             }
           });
-
-          // maintain backwards compatibility with plural output
-          msgs[key].plural = msgs[key].msgid_plural;
         }
       }
 
