@@ -144,6 +144,37 @@ describe('Parser', function () {
       });
     });
 
+    describe('comments', function () {
+      it('should extract comments', function () {
+        var result = new Parser().parse('{{_ "Hi" (gettext-comment "comment")}}').messages;
+        assert.deepEqual(result.Hi.extractedComments, ['comment']);
+      });
+
+      it('should allow customizing extracted comment identifiers', function () {
+        var result = new Parser({
+          commentIdentifiers: ['i18n-comment']
+        }).parse('{{_ "Hi" (i18n-comment "comment")}}').messages;
+
+        assert.deepEqual(result.Hi.extractedComments, ['comment']);
+      });
+
+      it('should support multiple comment identifiers', function () {
+        var result = new Parser({
+          commentIdentifiers: ['i18n-comment', 'gettext-comment']
+        }).parse('{{_ "Hi" (i18n-comment "comment1") (gettext-comment "comment2")}}').messages;
+
+        assert.deepEqual(result.Hi.extractedComments, ['comment1', 'comment2']);
+      });
+
+      it('should support passing a single comment', function () {
+        var result = new Parser({
+          commentIdentifiers: 'i18n-comment'
+        }).parse('{{_ "Hi" (i18n-comment "comment")}}').messages;
+
+        assert.deepEqual(result.Hi.extractedComments, ['comment']);
+      });
+    });
+
     it('should support being called without `new`', function (done) {
       /* jshint newcap: false */
       fs.readFile(__dirname + '/fixtures/template.hbs', {encoding: 'utf8'}, function (err, data) {

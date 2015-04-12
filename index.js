@@ -26,6 +26,7 @@ function Parser (options) {
     dcnpgettext: ['domain', 'msgctxt', 'msgid', 'msgid_plural', 'n', 'category']
   };
 
+  // TODO rename identifiers
   var keywords = options.keywords || Object.keys(specs).reduce(function (keywords, key) {
     // Add commonly used shorthands for each helper:
     // gettext -> _, dgettext -> d_, dcgettext -> dc_, etc.
@@ -45,6 +46,12 @@ function Parser (options) {
     this.domain = options.domain;
   } else {
     this.domain = Parser.DEFAULT_DOMAIN;
+  }
+
+  // name of subexpressions to extract comments from
+  this.commentIdentifiers = options.commentIdentifiers || ['gettext-comment'];
+  if (!Array.isArray(this.commentIdentifiers)) {
+    this.commentIdentifiers = [this.commentIdentifiers];
   }
 }
 
@@ -108,7 +115,7 @@ Parser.prototype.parse = function (template) {
 
           msgs[domain] = msgs[domain] || {};
           var key = Parser.messageToKey(msgid, context);
-          msgs[domain][key] = msgs[domain][key] || {line: []};
+          msgs[domain][key] = msgs[domain][key] || {extractedComments: [], line: []};
           var message = msgs[domain][key];
 
           // make sure plural forms match
@@ -138,6 +145,29 @@ Parser.prototype.parse = function (template) {
               message[prop] = params[i].string;
             }
           });
+
+          // extract comments
+          statement.params.forEach(function (param) {
+            if (param.type !== 'sexpr') {
+              return;
+            }
+
+            var id = param.id.string;
+            if (this.commentIdentifiers.indexOf(id) === -1) {
+              return;
+            }
+
+            if (!param.params[0]) {
+              throw new Error('Helper "' + id + '" has no parameters. Expected a comment string.');
+            } else if (param.params[0].type !== 'STRING') {
+              throw new Error("Can't extract non-string comment");
+            }
+
+            message.extractedComments.push(param.params[0].string);
+
+            // continue iterating, in case there are more
+            // subexpression with comments
+          }.bind(this));
         }
       }
 
