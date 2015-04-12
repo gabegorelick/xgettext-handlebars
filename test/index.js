@@ -18,7 +18,7 @@ describe('Parser', function () {
           throw err;
         }
 
-        var result = new Parser().parse(data);
+        var result = new Parser().parse(data).messages;
 
         assert.equal(typeof result, 'object');
         assert('inside block' in result);
@@ -30,13 +30,30 @@ describe('Parser', function () {
       });
     });
 
+    it('should extract domains', function (done) {
+      var result = new Parser().parse('{{d_ "plugin" "message"}}');
+      assert('plugin' in result);
+      assert.equal('messages' in result, false);
+
+      done();
+    });
+
+    it('should allow customizing default domain', function (done) {
+      var result = new Parser({domain: 'foo'}).parse('{{_ "hello"}}');
+      assert('foo' in result);
+      assert.equal('messages' in result, false);
+      assert('hello' in result.foo);
+
+      done();
+    });
+
     it('should return plural results', function (done) {
       fs.readFile(__dirname + '/fixtures/plural.hbs', {encoding: 'utf8'}, function (err, data) {
         if (err) {
           throw err;
         }
 
-        var result = new Parser().parse(data);
+        var result = new Parser().parse(data).messages;
 
         assert.equal(Object.keys(result).length, 2);
         assert.equal(result['default'].msgid_plural, 'defaults');
@@ -63,7 +80,7 @@ describe('Parser', function () {
           throw err;
         }
 
-        var result = new Parser().parse(data);
+        var result = new Parser().parse(data).messages;
 
         assert('subexpression' in result);
         assert('%s subexpression' in result);
@@ -86,7 +103,7 @@ describe('Parser', function () {
           throw err;
         }
 
-        var result = new Parser({keywords: {_: ['variable', 'msgid', 'msgid_plural']}}).parse(data);
+        var result = new Parser({keywords: {_: ['variable', 'msgid', 'msgid_plural']}}).parse(data).messages;
 
         assert.equal(result.msgid.msgid, 'msgid');
         assert.equal(result.msgid.msgid_plural, 'plural');
@@ -101,7 +118,7 @@ describe('Parser', function () {
           throw err;
         }
 
-        var result = new Parser().parse(data);
+        var result = new Parser().parse(data).messages;
 
         var key = Parser.messageToKey('pgettext_msgid', 'pgettext context');
         assert(key in result);
@@ -134,7 +151,7 @@ describe('Parser', function () {
           throw err;
         }
 
-        var result = Parser().parse(data);
+        var result = Parser().parse(data).messages;
 
         assert('inside block' in result);
 

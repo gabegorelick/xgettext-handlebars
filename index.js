@@ -10,24 +10,28 @@ function Parser (options) {
 
   options = options || {};
 
-  var gettextSpec = ['msgid'];
-  var ngettextSpec = ['msgid', 'msgid_plural'];
-  var pgettextSpec = ['msgctxt', 'msgid'];
-  var npgettextSpec = ['msgctxt', 'msgid', 'msgid_plural'];
-
-  var keywords = options.keywords || {
-    gettext: gettextSpec,
-    _: gettextSpec,
-
-    ngettext: ngettextSpec,
-    n_: ngettextSpec,
-
-    pgettext: pgettextSpec,
-    p_: pgettextSpec,
-
-    npgettext: npgettextSpec,
-    np_: npgettextSpec
+  // n and category shouldn't be needed in your PO files, but we try to mirror
+  // the gettext API as much as possible
+  var specs = {
+    gettext: ['msgid'],
+    dgettext: ['domain', 'msgid'],
+    dcgettext: ['domain', 'msgid', 'category'],
+    ngettext: ['msgid', 'msgid_plural', 'n'],
+    dngettext: ['domain', 'msgid', 'msgid_plural', 'n'],
+    dcngettext: ['domain', 'msgid', 'msgid_plural', 'n', 'category'],
+    pgettext: ['msgctxt', 'msgid'],
+    dpgettext: ['domain', 'msgctxt', 'msgid'],
+    npgettext: ['msgctxt', 'msgid', 'msgid_plural', 'n'],
+    dnpgettext: ['domain', 'msgctxt', 'msgid', 'msgid_plural', 'n'],
+    dcnpgettext: ['domain', 'msgctxt', 'msgid', 'msgid_plural', 'n', 'category']
   };
+
+  var keywords = options.keywords || Object.keys(specs).reduce(function (keywords, key) {
+    // Add commonly used shorthands for each helper:
+    // gettext -> _, dgettext -> d_, dcgettext -> dc_, etc.
+    keywords[key.replace('gettext', '_')] = keywords[key];
+    return keywords;
+  }, specs);
 
   Object.keys(keywords).forEach(function (keyword) {
     if (keywords[keyword].indexOf('msgid') === -1) {
@@ -36,13 +40,21 @@ function Parser (options) {
   });
 
   this.keywords = keywords;
+
+  if (options.domain || options.domain === '') { // empty domain is a valid domain
+    this.domain = options.domain;
+  } else {
+    this.domain = Parser.DEFAULT_DOMAIN;
+  }
 }
 
+Parser.DEFAULT_DOMAIN = 'messages';
+
 // Same as what Jed.js uses
-Parser.contextDelimiter = String.fromCharCode(4);
+Parser.CONTEXT_DELIMITER = String.fromCharCode(4);
 
 Parser.messageToKey = function (msgid, msgctxt) {
-  return msgctxt ? msgctxt + Parser.contextDelimiter + msgid : msgid;
+  return msgctxt ? msgctxt + Parser.CONTEXT_DELIMITER + msgid : msgid;
 };
 
 /**
@@ -52,14 +64,12 @@ Parser.messageToKey = function (msgid, msgctxt) {
  * @return Object The list of translatable strings, the line(s) on which each appears and an optional plural form.
  */
 Parser.prototype.parse = function (template) {
-  var keywords = this.keywords;
-
   var collectMsgs = function (msgs, statement) {
     statement = statement.sexpr || statement;
 
     if (statement.type === 'sexpr') {
-      if (Object.keys(keywords).indexOf(statement.id.string) !== -1) {
-        var spec = keywords[statement.id.string];
+      if (Object.keys(this.keywords).indexOf(statement.id.string) !== -1) {
+        var spec = this.keywords[statement.id.string];
         var params = statement.params;
         var msgidParam = params[spec.indexOf('msgid')];
 
@@ -73,17 +83,33 @@ Parser.prototype.parse = function (template) {
             if (!contextParam) {
               // throw an error if there's supposed to be a context but not enough
               // parameters were passed to the handlebars helper
-              throw new Error('No context specified for msgid "' + msgid + '"');
+              throw new Error('Expected a context for msgid "' + msgid + '" but none was given');
             }
             if (contextParam.type !== 'STRING') {
-              throw new Error('Context must be a string literal for msgid "' + msgid + '"');
+              throw new Error('Context must be a string literal (msgid "' + msgid + '")');
             }
 
             context = contextParam.string;
           }
 
+          var domain = this.domain;
+          var domainIndex = spec.indexOf('domain');
+          if (domainIndex !== -1) {
+            var domainParam = params[domainIndex];
+            if (!domainParam) {
+              throw new Error('Expected a domain for msgid "' + msgid + '" but none was given');
+            }
+            if (domainParam.type !== 'STRING') {
+              throw new Error('Domain must be a string literal (msgid "' + msgid + '")');
+            }
+
+            domain = domainParam.string;
+          }
+
+          msgs[domain] = msgs[domain] || {};
           var key = Parser.messageToKey(msgid, context);
-          msgs[key] = msgs[key] || {line: []};
+          msgs[domain][key] = msgs[domain][key] || {line: []};
+          var message = msgs[domain][key];
 
           // make sure plural forms match
           var pluralIndex = spec.indexOf('msgid_plural');
@@ -97,19 +123,19 @@ Parser.prototype.parse = function (template) {
             }
 
             var plural = pluralParam.string;
-            var existingPlural = msgs[key].msgid_plural;
+            var existingPlural = message.msgid_plural;
             if (plural && existingPlural && existingPlural !== plural) {
               throw new Error('Incompatible plural definitions for msgid "' + msgid +
-                '" ("' + msgs[key].msgid_plural + '" and "' + plural + '")');
+                '" ("' + message.msgid_plural + '" and "' + plural + '")');
             }
           }
 
-          msgs[key].line.push(statement.firstLine);
+          message.line.push(statement.firstLine);
 
           spec.forEach(function(prop, i) {
             var param = params[i];
             if (param && param.type === 'STRING') {
-              msgs[key][prop] = params[i].string;
+              message[prop] = params[i].string;
             }
           });
         }
@@ -127,7 +153,7 @@ Parser.prototype.parse = function (template) {
     }
 
     return msgs;
-  };
+  }.bind(this);
 
   return Handlebars.parse(template).statements.reduce(collectMsgs, {});
 };
