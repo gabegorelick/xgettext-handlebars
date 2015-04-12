@@ -7,7 +7,7 @@ var assert = require('assert');
 describe('Parser', function () {
   describe('#()', function () {
     it('should have default keyword spec when none is passed', function () {
-      assert(new Parser().keywordSpec.gettext.length > 0);
+      assert(new Parser().keywords.gettext.length > 0);
     });
   });
 
@@ -86,7 +86,7 @@ describe('Parser', function () {
           throw err;
         }
 
-        var result = new Parser({_: ['variable', 'msgid', 'msgid_plural']}).parse(data);
+        var result = new Parser({keywords: {_: ['variable', 'msgid', 'msgid_plural']}}).parse(data);
 
         assert.equal(result.msgid.msgid, 'msgid');
         assert.equal(result.msgid.msgid_plural, 'plural');

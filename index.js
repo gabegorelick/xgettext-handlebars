@@ -2,18 +2,20 @@
 
 var Handlebars = require('handlebars');
 
-function Parser (keywordSpec) {
+function Parser (options) {
   // make new optional
   if (!(this instanceof Parser)) {
-    return new Parser(keywordSpec);
+    return new Parser(options);
   }
+
+  options = options || {};
 
   var gettextSpec = ['msgid'];
   var ngettextSpec = ['msgid', 'msgid_plural'];
   var pgettextSpec = ['msgctxt', 'msgid'];
   var npgettextSpec = ['msgctxt', 'msgid', 'msgid_plural'];
 
-  keywordSpec = keywordSpec || {
+  var keywords = options.keywords || {
     gettext: gettextSpec,
     _: gettextSpec,
 
@@ -27,13 +29,13 @@ function Parser (keywordSpec) {
     np_: npgettextSpec
   };
 
-  Object.keys(keywordSpec).forEach(function (keyword) {
-    if (keywordSpec[keyword].indexOf('msgid') === -1) {
+  Object.keys(keywords).forEach(function (keyword) {
+    if (keywords[keyword].indexOf('msgid') === -1) {
       throw new Error('Every keyword must have a msgid parameter, but "' + keyword + '" doesn\'t have one');
     }
   });
 
-  this.keywordSpec = keywordSpec;
+  this.keywords = keywords;
 }
 
 // Same as what Jed.js uses
@@ -50,16 +52,14 @@ Parser.messageToKey = function (msgid, msgctxt) {
  * @return Object The list of translatable strings, the line(s) on which each appears and an optional plural form.
  */
 Parser.prototype.parse = function (template) {
-  var keywordSpec = this.keywordSpec;
-  var keywords = Object.keys(keywordSpec);
-  var tree = Handlebars.parse(template);
+  var keywords = this.keywords;
 
   var collectMsgs = function (msgs, statement) {
     statement = statement.sexpr || statement;
 
     if (statement.type === 'sexpr') {
-      if (keywords.indexOf(statement.id.string) !== -1) {
-        var spec = keywordSpec[statement.id.string];
+      if (Object.keys(keywords).indexOf(statement.id.string) !== -1) {
+        var spec = keywords[statement.id.string];
         var params = statement.params;
         var msgidParam = params[spec.indexOf('msgid')];
 
@@ -129,7 +129,7 @@ Parser.prototype.parse = function (template) {
     return msgs;
   };
 
-  return tree.statements.reduce(collectMsgs, {});
+  return Handlebars.parse(template).statements.reduce(collectMsgs, {});
 };
 
 module.exports = Parser;
