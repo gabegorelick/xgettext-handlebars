@@ -2,12 +2,12 @@
 
 var Parser = require('..');
 var fs = require('fs');
-var assert = require('assert');
+require('should');
 
 describe('Parser', function () {
   describe('#()', function () {
     it('should have default keyword spec when none is passed', function () {
-      assert(new Parser().keywords.gettext.length > 0);
+      new Parser().keywords.gettext.length.should.be.greaterThan(0);
     });
   });
 
@@ -20,31 +20,29 @@ describe('Parser', function () {
 
         var result = new Parser().parse(data).messages;
 
-        assert.equal(typeof result, 'object');
-        assert('inside block' in result);
-        assert('inside block inverse' in result);
-        assert.equal(Object.keys(result).length, 8);
-        assert.equal(result['Image description'].line.length, 2);
+        result.should.containEql('inside block')
+          .and.containEql('inside block inverse');
+
+        Object.keys(result).length.should.equal(8);
+        result['Image description'].line.length.should.equal(2);
 
         done();
       });
     });
 
-    it('should extract domains', function (done) {
+    it('should extract domains', function () {
       var result = new Parser().parse('{{d_ "plugin" "message"}}');
-      assert('plugin' in result);
-      assert.equal('messages' in result, false);
 
-      done();
+      result.should.containEql('plugin')
+        .and.not.containEql('messages');
     });
 
-    it('should allow customizing default domain', function (done) {
+    it('should allow customizing default domain', function () {
       var result = new Parser({domain: 'foo'}).parse('{{_ "hello"}}');
-      assert('foo' in result);
-      assert.equal('messages' in result, false);
-      assert('hello' in result.foo);
 
-      done();
+      result.should.containEql('foo');
+      result.foo.should.containEql('hello');
+      result.should.not.containEql('messages');
     });
 
     it('should return plural results', function (done) {
@@ -55,8 +53,8 @@ describe('Parser', function () {
 
         var result = new Parser().parse(data).messages;
 
-        assert.equal(Object.keys(result).length, 2);
-        assert.equal(result['default'].msgid_plural, 'defaults');
+        Object.keys(result).length.should.equal(2);
+        result['default'].msgid_plural.should.equal('defaults');
 
         done();
       });
@@ -68,7 +66,7 @@ describe('Parser', function () {
           throw err;
         }
 
-        assert.throws(function() { new Parser().parse(data); }, Error);
+        (function () {new Parser().parse(data);}).should.throw();
 
         done();
       });
@@ -82,16 +80,20 @@ describe('Parser', function () {
 
         var result = new Parser().parse(data).messages;
 
-        assert('subexpression' in result);
-        assert('%s subexpression' in result);
-        assert.equal(result['%s subexpression'].msgid_plural, '%s subexpressions');
-        assert('%s %s subexpression' in result);
-        assert.equal(result['%s %s subexpression'].msgid_plural, '%s %s subexpressions');
-        assert('second' in result);
-        assert('regular' in result);
-        assert('%s %s other' in result);
-        assert('nested %s' in result);
-        assert.equal(7, Object.keys(result).length);
+        result.should.containEql('subexpression')
+          .and.containEql('%s subexpression');
+
+        result['%s subexpression'].msgid_plural.should.equal('%s subexpressions');
+
+        result.should.containEql('%s %s subexpression');
+        result['%s %s subexpression'].msgid_plural.should.equal('%s %s subexpressions');
+
+        result.should.containEql('second')
+          .and.containEql('regular')
+          .and.containEql('%s %s other')
+          .and.containEql('nested %s');
+
+        Object.keys(result).length.should.equal(7);
 
         done();
       });
@@ -105,8 +107,8 @@ describe('Parser', function () {
 
         var result = new Parser({keywords: {_: ['variable', 'msgid', 'msgid_plural']}}).parse(data).messages;
 
-        assert.equal(result.msgid.msgid, 'msgid');
-        assert.equal(result.msgid.msgid_plural, 'plural');
+        result.msgid.msgid.should.equal('msgid');
+        result.msgid.msgid_plural.should.equal('plural');
 
         done();
       });
@@ -121,24 +123,24 @@ describe('Parser', function () {
         var result = new Parser().parse(data).messages;
 
         var key = Parser.messageToKey('pgettext_msgid', 'pgettext context');
-        assert(key in result);
-        assert.equal(result[key].msgctxt, 'pgettext context');
+        result.should.containEql(key);
+        result[key].msgctxt.should.equal('pgettext context');
 
         key = Parser.messageToKey('p_msgid', 'p_ context');
-        assert(key in result);
-        assert.equal(result[key].msgctxt, 'p_ context');
+        result.should.containEql(key);
+        result[key].msgctxt.should.equal('p_ context');
 
         key = Parser.messageToKey('file', 'noun');
-        assert(key in result);
-        assert.equal(result[key].msgctxt, 'noun');
-        assert.equal(result[key].msgid_plural, 'files');
+        result.should.containEql(key);
+        result[key].msgctxt.should.equal('noun');
+        result[key].msgid_plural.should.equal('files');
 
         key = Parser.messageToKey('file', 'verb');
-        assert(key in result);
-        assert.equal(result[key].msgctxt, 'verb');
-        assert.equal(result[key].msgid_plural, 'files');
+        result.should.containEql(key);
+        result[key].msgctxt.should.equal('verb');
+        result[key].msgid_plural.should.equal('files');
 
-        assert.equal(4, Object.keys(result).length);
+        Object.keys(result).length.should.equal(4);
 
         done();
       });
@@ -147,7 +149,7 @@ describe('Parser', function () {
     describe('comments', function () {
       it('should extract comments', function () {
         var result = new Parser().parse('{{_ "Hi" (gettext-comment "comment")}}').messages;
-        assert.deepEqual(result.Hi.extractedComments, ['comment']);
+        result.Hi.extractedComments.should.eql(['comment']);
       });
 
       it('should allow customizing extracted comment identifiers', function () {
@@ -155,7 +157,7 @@ describe('Parser', function () {
           commentIdentifiers: ['i18n-comment']
         }).parse('{{_ "Hi" (i18n-comment "comment")}}').messages;
 
-        assert.deepEqual(result.Hi.extractedComments, ['comment']);
+        result.Hi.extractedComments.should.eql(['comment']);
       });
 
       it('should support multiple comment identifiers', function () {
@@ -163,7 +165,7 @@ describe('Parser', function () {
           commentIdentifiers: ['i18n-comment', 'gettext-comment']
         }).parse('{{_ "Hi" (i18n-comment "comment1") (gettext-comment "comment2")}}').messages;
 
-        assert.deepEqual(result.Hi.extractedComments, ['comment1', 'comment2']);
+        result.Hi.extractedComments.should.eql(['comment1', 'comment2']);
       });
 
       it('should support passing a single comment', function () {
@@ -171,7 +173,7 @@ describe('Parser', function () {
           commentIdentifiers: 'i18n-comment'
         }).parse('{{_ "Hi" (i18n-comment "comment")}}').messages;
 
-        assert.deepEqual(result.Hi.extractedComments, ['comment']);
+        result.Hi.extractedComments.should.eql(['comment']);
       });
     });
 
@@ -184,7 +186,7 @@ describe('Parser', function () {
 
         var result = Parser().parse(data).messages;
 
-        assert('inside block' in result);
+        result.should.containEql('inside block');
 
         done();
       });
