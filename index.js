@@ -115,7 +115,7 @@ Parser.prototype.parse = function (template) {
 
           msgs[domain] = msgs[domain] || {};
           var key = Parser.messageToKey(msgid, context);
-          msgs[domain][key] = msgs[domain][key] || {extractedComments: [], line: []};
+          msgs[domain][key] = msgs[domain][key] || {extractedComments: [], references: []};
           var message = msgs[domain][key];
 
           // make sure plural forms match
@@ -137,7 +137,12 @@ Parser.prototype.parse = function (template) {
             }
           }
 
-          message.line.push(statement.firstLine);
+          message.references.push({
+            firstLine: statement.firstLine,
+            firstColumn: statement.firstColumn,
+            lastLine: statement.lastLine,
+            lastColumn: statement.lastColumn
+          });
 
           spec.forEach(function(prop, i) {
             var param = params[i];

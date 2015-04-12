@@ -24,7 +24,36 @@ describe('Parser', function () {
           .and.containEql('inside block inverse');
 
         Object.keys(result).length.should.equal(8);
-        result['Image description'].line.length.should.equal(2);
+        result['Image description'].references.length.should.equal(2);
+
+        done();
+      });
+    });
+
+    it('should combine references', function (done) {
+      fs.readFile(__dirname + '/fixtures/references.hbs', {encoding: 'utf8'}, function (err, data) {
+        if (err) {
+          throw err;
+        }
+
+        var result = new Parser().parse(data).messages;
+
+        result.duplicate.references.should.eql([
+          {
+            firstLine: 1,
+            firstColumn: 2,
+            lastLine: 1,
+            lastColumn: 15,
+          },
+          {
+            firstLine: 2,
+            firstColumn: 2,
+            lastLine: 2,
+            lastColumn: 15,
+          }
+        ]);
+
+        result.unique.references.length.should.equal(1);
 
         done();
       });
