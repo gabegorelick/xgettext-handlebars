@@ -7,7 +7,7 @@ require('should');
 describe('Parser', function () {
   describe('#()', function () {
     it('should have default keyword spec when none is passed', function () {
-      new Parser().keywords.gettext.length.should.be.greaterThan(0);
+      new Parser().identifiers.gettext.length.should.be.greaterThan(0);
     });
   });
 
@@ -134,7 +134,7 @@ describe('Parser', function () {
           throw err;
         }
 
-        var result = new Parser({keywords: {_: ['variable', 'msgid', 'msgid_plural']}}).parse(data).messages;
+        var result = new Parser({identifiers: {_: ['variable', 'msgid', 'msgid_plural']}}).parse(data).messages;
 
         result.msgid.msgid.should.equal('msgid');
         result.msgid.msgid_plural.should.equal('plural');

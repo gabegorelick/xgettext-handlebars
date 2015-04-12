@@ -27,20 +27,20 @@ function Parser (options) {
   };
 
   // TODO rename identifiers
-  var keywords = options.keywords || Object.keys(specs).reduce(function (keywords, key) {
+  var identifiers = options.identifiers || Object.keys(specs).reduce(function (identifiers, id) {
     // Add commonly used shorthands for each helper:
     // gettext -> _, dgettext -> d_, dcgettext -> dc_, etc.
-    keywords[key.replace('gettext', '_')] = keywords[key];
-    return keywords;
+    identifiers[id.replace('gettext', '_')] = identifiers[id];
+    return identifiers;
   }, specs);
 
-  Object.keys(keywords).forEach(function (keyword) {
-    if (keywords[keyword].indexOf('msgid') === -1) {
-      throw new Error('Every keyword must have a msgid parameter, but "' + keyword + '" doesn\'t have one');
+  Object.keys(identifiers).forEach(function (id) {
+    if (identifiers[id].indexOf('msgid') === -1) {
+      throw new Error('Every id must have a msgid parameter, but "' + id + '" doesn\'t have one');
     }
   });
 
-  this.keywords = keywords;
+  this.identifiers = identifiers;
 
   if (options.domain || options.domain === '') { // empty domain is a valid domain
     this.domain = options.domain;
@@ -75,8 +75,8 @@ Parser.prototype.parse = function (template) {
     statement = statement.sexpr || statement;
 
     if (statement.type === 'sexpr') {
-      if (Object.keys(this.keywords).indexOf(statement.id.string) !== -1) {
-        var spec = this.keywords[statement.id.string];
+      if (Object.keys(this.identifiers).indexOf(statement.id.string) !== -1) {
+        var spec = this.identifiers[statement.id.string];
         var params = statement.params;
         var msgidParam = params[spec.indexOf('msgid')];
 
