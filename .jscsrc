@@ -2,5 +2,9 @@
   "preset": "google",
   "disallowSpacesInAnonymousFunctionExpression": null,
   "maximumLineLength": null,
-  "requireCamelCaseOrUpperCaseIdentifiers": "ignoreProperties"
+  "requireCamelCaseOrUpperCaseIdentifiers": "ignoreProperties",
+  "validateQuoteMarks": {
+    "mark": "'",
+    "escape": true
+  }
 }
