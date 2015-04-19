@@ -67,7 +67,7 @@ describe('Parser', function () {
     });
 
     it('should allow customizing default domain', function () {
-      var result = new Parser({domain: 'foo'}).parse('{{_ "hello"}}');
+      var result = new Parser({defaultDomain: 'foo'}).parse('{{_ "hello"}}');
 
       result.should.containEql('foo');
       result.foo.should.containEql('hello');

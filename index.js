@@ -20,10 +20,11 @@ function Parser (options) {
 
   this.identifiers = identifiers || Parser.DEFAULT_IDENTIFIERS;
 
-  if (options.domain || options.domain === '') { // empty domain is a valid domain
-    this.domain = options.domain;
+  // domain to be used when none is specified
+  if (options.defaultDomain || options.defaultDomain === '') { // empty domain is a valid domain
+    this.defaultDomain = options.defaultDomain;
   } else {
-    this.domain = Parser.DEFAULT_DOMAIN;
+    this.defaultDomain = 'messages';
   }
 
   // name of subexpressions to extract comments from
@@ -57,8 +58,6 @@ Parser.DEFAULT_IDENTIFIERS = (function () {
     return identifiers;
   }, specs);
 })();
-
-Parser.DEFAULT_DOMAIN = 'messages';
 
 // Same as what Jed.js uses
 Parser.CONTEXT_DELIMITER = String.fromCharCode(4);
@@ -102,7 +101,7 @@ Parser.prototype.parse = function (template) {
             context = contextParam.string;
           }
 
-          var domain = this.domain;
+          var domain = this.defaultDomain;
           var domainIndex = spec.indexOf('domain');
           if (domainIndex !== -1) {
             var domainParam = params[domainIndex];

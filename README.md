@@ -128,7 +128,7 @@ can't warn you about mismatched plural definitions like the following:
 {{! error, should we use "goose" or "geese"?}}
 ```
 
-#### `domain`
+#### `defaultDomain`
 
 Optional string indicating the default domain. Defaults to `messages`.
 
