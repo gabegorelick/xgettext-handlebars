@@ -10,6 +10,30 @@ function Parser (options) {
 
   options = options || {};
 
+  var identifiers = options.identifiers || Parser.DEFAULT_IDENTIFIERS;
+
+  Object.keys(identifiers).forEach(function (id) {
+    if (identifiers[id].indexOf('msgid') === -1) {
+      throw new Error('Every id must have a msgid parameter, but "' + id + '" doesn\'t have one');
+    }
+  });
+
+  this.identifiers = identifiers || Parser.DEFAULT_IDENTIFIERS;
+
+  if (options.domain || options.domain === '') { // empty domain is a valid domain
+    this.domain = options.domain;
+  } else {
+    this.domain = Parser.DEFAULT_DOMAIN;
+  }
+
+  // name of subexpressions to extract comments from
+  this.commentIdentifiers = options.commentIdentifiers || ['gettext-comment'];
+  if (!Array.isArray(this.commentIdentifiers)) {
+    this.commentIdentifiers = [this.commentIdentifiers];
+  }
+}
+
+Parser.DEFAULT_IDENTIFIERS = (function () {
   // n and category shouldn't be needed in your PO files, but we try to mirror
   // the gettext API as much as possible
   var specs = {
@@ -26,34 +50,13 @@ function Parser (options) {
     dcnpgettext: ['domain', 'msgctxt', 'msgid', 'msgid_plural', 'n', 'category']
   };
 
-  // TODO rename identifiers
-  var identifiers = options.identifiers || Object.keys(specs).reduce(function (identifiers, id) {
+  return Object.keys(specs).reduce(function (identifiers, id) {
     // Add commonly used shorthands for each helper:
     // gettext -> _, dgettext -> d_, dcgettext -> dc_, etc.
     identifiers[id.replace('gettext', '_')] = identifiers[id];
     return identifiers;
   }, specs);
-
-  Object.keys(identifiers).forEach(function (id) {
-    if (identifiers[id].indexOf('msgid') === -1) {
-      throw new Error('Every id must have a msgid parameter, but "' + id + '" doesn\'t have one');
-    }
-  });
-
-  this.identifiers = identifiers;
-
-  if (options.domain || options.domain === '') { // empty domain is a valid domain
-    this.domain = options.domain;
-  } else {
-    this.domain = Parser.DEFAULT_DOMAIN;
-  }
-
-  // name of subexpressions to extract comments from
-  this.commentIdentifiers = options.commentIdentifiers || ['gettext-comment'];
-  if (!Array.isArray(this.commentIdentifiers)) {
-    this.commentIdentifiers = [this.commentIdentifiers];
-  }
-}
+})();
 
 Parser.DEFAULT_DOMAIN = 'messages';
 
@@ -115,7 +118,11 @@ Parser.prototype.parse = function (template) {
 
           msgs[domain] = msgs[domain] || {};
           var key = Parser.messageToKey(msgid, context);
-          msgs[domain][key] = msgs[domain][key] || {extractedComments: [], references: []};
+          msgs[domain][key] = msgs[domain][key] || {
+            extractedComments: [],
+            references: [],
+            fields: {} // extracted fields get placed here so they don't clobber anything
+          };
           var message = msgs[domain][key];
 
           // make sure plural forms match
@@ -147,7 +154,14 @@ Parser.prototype.parse = function (template) {
           spec.forEach(function(prop, i) {
             var param = params[i];
             if (param && param.type === 'STRING') {
-              message[prop] = params[i].string;
+              var knownFields = Parser.DEFAULT_IDENTIFIERS.dcnpgettext;
+              if (knownFields.indexOf(prop) !== -1) {
+                // field name doesn't conflict with anything, we can save it at top level
+                message[prop] = params[i].string;
+              }
+
+              // save all fields under .fields to prevent collisions
+              message.fields[prop] = params[i].string;
             }
           });
 

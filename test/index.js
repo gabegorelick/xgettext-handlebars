@@ -2,7 +2,7 @@
 
 var Parser = require('..');
 var fs = require('fs');
-require('should');
+var should = require('should');
 
 describe('Parser', function () {
   describe('#()', function () {
@@ -141,6 +141,32 @@ describe('Parser', function () {
 
         done();
       });
+    });
+
+    it('should support extracting unknown fields', function (done) {
+      var parser = new Parser({identifiers: {_: ['msgid', 'foo']}});
+      var messages = parser.parse('{{_ "Hi" "Foo"}}').messages;
+
+      should(messages.Hi.foo).not.be.ok;
+      messages.Hi.fields.foo.should.equal('Foo');
+
+      done();
+    });
+
+    it('should not overwrite existing fields', function (done) {
+      var parser = new Parser({identifiers: {_: ['msgid', 'references']}});
+      var messages = parser.parse('{{_ "Hi" "Foo"}}').messages;
+
+      // references shouldn't get overwritten by 'Foo'
+      messages.Hi.references.should.eql([{
+        firstLine: 1,
+        firstColumn: 2,
+        lastColumn: 14,
+        lastLine: 1
+      }]);
+      messages.Hi.fields.references.should.equal('Foo');
+
+      done();
     });
 
     it('should support extracting contexts', function (done) {
