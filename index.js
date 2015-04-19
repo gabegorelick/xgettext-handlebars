@@ -143,6 +143,9 @@ Parser.prototype.parse = function (template) {
             }
           }
 
+          // return AST so consumer has as much information as possible
+          message.ast = statement;
+
           message.references.push({
             firstLine: statement.firstLine,
             firstColumn: statement.firstColumn,

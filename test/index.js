@@ -5,13 +5,28 @@ var fs = require('fs');
 var should = require('should');
 
 describe('Parser', function () {
-  describe('#()', function () {
-    it('should have default keyword spec when none is passed', function () {
+  describe('constructor', function () {
+    it('should have default identifiers when none are passed', function () {
       new Parser().identifiers.gettext.length.should.be.greaterThan(0);
+    });
+
+    it('should support being called without `new`', function (done) {
+      /* jshint newcap: false */
+      fs.readFile(__dirname + '/fixtures/template.hbs', {encoding: 'utf8'}, function (err, data) {
+        if (err) {
+          throw err;
+        }
+
+        var result = Parser().parse(data).messages;
+
+        result.should.containEql('inside block');
+
+        done();
+      });
     });
   });
 
-  describe('#parse()', function () {
+  describe('.parse()', function () {
     it('should return results', function (done) {
       fs.readFile(__dirname + '/fixtures/template.hbs', {encoding: 'utf8'}, function (err, data) {
         if (err) {
@@ -232,19 +247,12 @@ describe('Parser', function () {
       });
     });
 
-    it('should support being called without `new`', function (done) {
-      /* jshint newcap: false */
-      fs.readFile(__dirname + '/fixtures/template.hbs', {encoding: 'utf8'}, function (err, data) {
-        if (err) {
-          throw err;
-        }
+    // if we return the corresponding AST node with an extracted string,
+    // consumers can pretty much do anything they want
+    it('should return AST', function () {
+        var messages = new Parser().parse('{{_ "Hi"}}').messages;
 
-        var result = Parser().parse(data).messages;
-
-        result.should.containEql('inside block');
-
-        done();
+        messages.Hi.ast.type.should.equal('sexpr');
       });
-    });
   });
 });
