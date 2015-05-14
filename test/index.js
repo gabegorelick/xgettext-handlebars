@@ -55,12 +55,14 @@ describe('Parser', function () {
 
         result.duplicate.references.should.eql([
           {
+            filename: undefined,
             firstLine: 1,
             firstColumn: 2,
             lastLine: 1,
             lastColumn: 15
           },
           {
+            filename: undefined,
             firstLine: 2,
             firstColumn: 2,
             lastLine: 2,
@@ -174,6 +176,7 @@ describe('Parser', function () {
 
       // references shouldn't get overwritten by 'Foo'
       messages.Hi.references.should.eql([{
+        filename: undefined,
         firstLine: 1,
         firstColumn: 2,
         lastColumn: 14,

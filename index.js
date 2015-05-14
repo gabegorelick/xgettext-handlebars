@@ -71,10 +71,14 @@ Parser.messageToKey = function (msgid, msgctxt) {
 /**
  * Given a Handlebars template string returns the list of i18n strings.
  *
- * @param String template The content of a HBS template.
- * @return Object The list of translatable strings, the line(s) on which each appears and an optional plural form.
+ * @param template {string} The content of a HBS template.
+ * @param {object} options Currently just filename
+ * @return {object} The list of translatable strings, the line(s) on which each appears and an optional plural form.
  */
-Parser.prototype.parse = function (template) {
+Parser.prototype.parse = function (template, options) {
+  options = options || {};
+  var filename = options.filename;
+
   var collectMsgs = function (msgs, statement) {
     statement = statement.sexpr || statement;
 
@@ -149,6 +153,7 @@ Parser.prototype.parse = function (template) {
           message.ast = statement;
 
           message.references.push({
+            filename: filename,
             firstLine: statement.firstLine,
             firstColumn: statement.firstColumn,
             lastLine: statement.lastLine,
