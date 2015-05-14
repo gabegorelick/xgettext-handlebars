@@ -157,16 +157,26 @@ Parser.prototype.parse = function (template) {
 
           spec.forEach(function(prop, i) {
             var param = params[i];
-            if (param && param.type === 'STRING') {
-              var knownFields = Parser.DEFAULT_IDENTIFIERS.dcnpgettext;
-              if (knownFields.indexOf(prop) !== -1) {
-                // field name doesn't conflict with anything, we can save it at top level
-                message[prop] = params[i].string;
-              }
-
-              // save all fields under .fields to prevent collisions
-              message.fields[prop] = params[i].string;
+            if (!param) {
+              return;
             }
+
+            if (param.type !== 'STRING') {
+              if (prop === 'domain' || prop === 'msgid' || prop === 'msgctxt' || prop === 'msgid_plural') {
+                // Non-string literals mean you're extracting a variable or something else
+                // funky that doesn't gel with gettext-style workflows
+                console.warn('WARNING: Extracting non-string literal `' + param.string + '`');
+              }
+            }
+
+            var knownFields = Parser.DEFAULT_IDENTIFIERS.dcnpgettext;
+            if (knownFields.indexOf(prop) !== -1) {
+              // field name doesn't conflict with anything, we can save it at top level
+              message[prop] = params[i].string;
+            }
+
+            // save all fields under .fields to prevent collisions
+            message.fields[prop] = params[i].string;
           });
 
           // extract comments
