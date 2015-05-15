@@ -1,6 +1,6 @@
 {
   "name": "xgettext-handlebars",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Extract translatable strings from Handlebars templates",
   "author": "Gabe Gorelick",
   "license": "MIT",
