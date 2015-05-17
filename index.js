@@ -78,152 +78,168 @@ Parser.messageToKey = function (msgid, msgctxt) {
 Parser.prototype.parse = function (template, options) {
   options = options || {};
   var filename = options.filename;
+  var msgs = {};
 
-  var collectMsgs = function (msgs, statement) {
-    statement = statement.sexpr || statement;
+  var Visitor = Handlebars.Visitor;
 
-    if (statement.type === 'sexpr') {
-      if (Object.keys(this.identifiers).indexOf(statement.id.string) !== -1) {
-        var spec = this.identifiers[statement.id.string];
-        var params = statement.params;
-        var msgidParam = params[spec.indexOf('msgid')];
+  function GettextExtractor () {}
+  GettextExtractor.prototype = new Visitor();
 
-        if (msgidParam) { // don't extract {{gettext}} without param
-          var msgid = msgidParam.string;
-          var contextIndex = spec.indexOf('msgctxt');
+  var identifiers = this.identifiers;
+  var defaultDomain = this.defaultDomain;
+  var commentIdentifiers = this.commentIdentifiers;
 
-          var context = null; // null context is *not* the same as empty context
-          if (contextIndex >= 0) {
-            var contextParam = params[contextIndex];
-            if (!contextParam) {
-              // throw an error if there's supposed to be a context but not enough
-              // parameters were passed to the handlebars helper
-              throw new Error('Expected a context for msgid "' + msgid + '" but none was given');
-            }
-            if (contextParam.type !== 'STRING') {
-              throw new Error('Context must be a string literal (msgid "' + msgid + '")');
-            }
+  var extract = function (statement) {
+    var path = statement.path;
+    var params = statement.params;
 
-            context = contextParam.string;
-          }
+    if (Object.keys(identifiers).indexOf(path.original) === -1) {
+      return;
+    }
 
-          var domain = this.defaultDomain;
-          var domainIndex = spec.indexOf('domain');
-          if (domainIndex !== -1) {
-            var domainParam = params[domainIndex];
-            if (!domainParam) {
-              throw new Error('Expected a domain for msgid "' + msgid + '" but none was given');
-            }
-            if (domainParam.type !== 'STRING') {
-              throw new Error('Domain must be a string literal (msgid "' + msgid + '")');
-            }
+    var spec = identifiers[path.original];
+    var msgidParam = params[spec.indexOf('msgid')];
 
-            domain = domainParam.string;
-          }
+    if (msgidParam) { // don't extract {{gettext}} without param
+      var msgid = msgidParam.value;
+      var contextIndex = spec.indexOf('msgctxt');
 
-          msgs[domain] = msgs[domain] || {};
-          var key = Parser.messageToKey(msgid, context);
-          msgs[domain][key] = msgs[domain][key] || {
-            extractedComments: [],
-            references: [],
-            fields: {} // extracted fields get placed here so they don't clobber anything
-          };
-          var message = msgs[domain][key];
+      var context = null; // null context is *not* the same as empty context
+      if (contextIndex >= 0) {
+        var contextParam = params[contextIndex];
+        if (!contextParam) {
+          // throw an error if there's supposed to be a context but not enough
+          // parameters were passed to the handlebars helper
+          throw new Error('Expected a context for msgid "' + msgid + '" but none was given');
+        }
+        if (contextParam.type !== 'StringLiteral') {
+          throw new Error('Context must be a string literal (msgid "' + msgid + '")');
+        }
 
-          // make sure plural forms match
-          var pluralIndex = spec.indexOf('msgid_plural');
-          if (pluralIndex !== -1) {
-            var pluralParam = params[pluralIndex];
-            if (!pluralParam) {
-              throw new Error('No plural specified for msgid "' + msgid + '"');
-            }
-            if (pluralParam.type !== 'STRING') {
-              throw new Error('Plural must be a string literal for msgid ' + msgid);
-            }
+        context = contextParam.value;
+      }
 
-            var plural = pluralParam.string;
-            var existingPlural = message.msgid_plural;
-            if (plural && existingPlural && existingPlural !== plural) {
-              throw new Error('Incompatible plural definitions for msgid "' + msgid +
-                '" ("' + message.msgid_plural + '" and "' + plural + '")');
-            }
-          }
+      var domain = defaultDomain;
+      var domainIndex = spec.indexOf('domain');
+      if (domainIndex !== -1) {
+        var domainParam = params[domainIndex];
+        if (!domainParam) {
+          throw new Error('Expected a domain for msgid "' + msgid + '" but none was given');
+        }
+        if (domainParam.type !== 'StringLiteral') {
+          throw new Error('Domain must be a string literal (msgid "' + msgid + '")');
+        }
 
-          // return AST so consumer has as much information as possible
-          message.ast = statement;
+        domain = domainParam.value;
+      }
 
-          message.references.push({
-            filename: filename,
-            firstLine: statement.firstLine,
-            firstColumn: statement.firstColumn,
-            lastLine: statement.lastLine,
-            lastColumn: statement.lastColumn
-          });
+      msgs[domain] = msgs[domain] || {};
+      var key = Parser.messageToKey(msgid, context);
+      msgs[domain][key] = msgs[domain][key] || {
+        extractedComments: [],
+        references: [],
+        fields: {} // extracted fields get placed here so they don't clobber anything
+      };
+      var message = msgs[domain][key];
 
-          spec.forEach(function(prop, i) {
-            var param = params[i];
-            if (!param) {
-              return;
-            }
+      // make sure plural forms match
+      var pluralIndex = spec.indexOf('msgid_plural');
+      if (pluralIndex !== -1) {
+        var pluralParam = params[pluralIndex];
+        if (!pluralParam) {
+          throw new Error('No plural specified for msgid "' + msgid + '"');
+        }
+        if (pluralParam.type !== 'StringLiteral') {
+          throw new Error('Plural must be a string literal for msgid ' + msgid);
+        }
 
-            if (param.type !== 'STRING') {
-              if (prop === 'domain' || prop === 'msgid' || prop === 'msgctxt' || prop === 'msgid_plural') {
-                // Non-string literals mean you're extracting a variable or something else
-                // funky that doesn't gel with gettext-style workflows
-                console.warn('WARNING: Extracting non-string literal `' + param.string + '`');
-              }
-            }
-
-            var knownFields = Parser.DEFAULT_IDENTIFIERS.dcnpgettext;
-            if (knownFields.indexOf(prop) !== -1) {
-              // field name doesn't conflict with anything, we can save it at top level
-              message[prop] = params[i].string;
-            }
-
-            // save all fields under .fields to prevent collisions
-            message.fields[prop] = params[i].string;
-          });
-
-          // extract comments
-          statement.params.forEach(function (param) {
-            if (param.type !== 'sexpr') {
-              return;
-            }
-
-            var id = param.id.string;
-            if (this.commentIdentifiers.indexOf(id) === -1) {
-              return;
-            }
-
-            if (!param.params[0]) {
-              throw new Error('Helper "' + id + '" has no parameters. Expected a comment string.');
-            } else if (param.params[0].type !== 'STRING') {
-              throw new Error("Can't extract non-string comment");
-            }
-
-            message.extractedComments.push(param.params[0].string);
-
-            // continue iterating, in case there are more
-            // subexpression with comments
-          }.bind(this));
+        var plural = pluralParam.value;
+        var existingPlural = message.msgid_plural;
+        if (plural && existingPlural && existingPlural !== plural) {
+          throw new Error('Incompatible plural definitions for msgid "' + msgid +
+          '" ("' + message.msgid_plural + '" and "' + plural + '")');
         }
       }
 
-      statement.params.reduce(collectMsgs, msgs);
-    } else if (statement.type === 'block') {
-      if (statement.program) {
-        statement.program.statements.reduce(collectMsgs, msgs);
-      }
+      // return AST so consumer has as much information as possible
+      message.ast = statement;
 
-      if (statement.inverse) {
-        statement.inverse.statements.reduce(collectMsgs, msgs);
-      }
+      var loc = statement.loc;
+      message.references.push({
+        filename: filename,
+        start: {
+          line: loc.start.line,
+          column: loc.start.column
+        },
+        end: {
+          line: loc.end.line,
+          column: loc.end.column
+        }
+      });
+
+      spec.forEach(function (prop, i) {
+        var param = params[i];
+        if (!param) {
+          return;
+        }
+
+        if (param.type !== 'StringLiteral') {
+          if (prop === 'domain' || prop === 'msgid' || prop === 'msgctxt' || prop === 'msgid_plural') {
+            // Non-string literals mean you're extracting a variable or something else
+            // funky that doesn't gel with gettext-style workflows
+            console.warn('WARNING: Extracting non-string literal `' + param.value + '`');
+          }
+        }
+
+        var knownFields = Parser.DEFAULT_IDENTIFIERS.dcnpgettext;
+        if (knownFields.indexOf(prop) !== -1) {
+          // field name doesn't conflict with anything, we can save it at top level
+          message[prop] = params[i].value;
+        }
+
+        // save all fields under .fields to prevent collisions
+        message.fields[prop] = params[i].value;
+      });
+
+      // extract comments
+      params.forEach(function (param) {
+        if (param.type !== 'SubExpression') {
+          return;
+        }
+
+        var id = param.path.original;
+        if (commentIdentifiers.indexOf(id) === -1) {
+          return;
+        }
+
+        if (!param.params[0]) {
+          throw new Error('Helper "' + id + '" has no parameters. Expected a comment string.');
+        } else if (param.params[0].type !== 'StringLiteral') {
+          throw new Error("Can't extract non-string comment");
+        }
+
+        message.extractedComments.push(param.params[0].value);
+
+        // continue iterating, in case there are more
+        // subexpression with comments
+      });
     }
+  };
 
-    return msgs;
-  }.bind(this);
+  GettextExtractor.prototype.MustacheStatement = function (statement) {
+    extract(statement);
+    Visitor.prototype.MustacheStatement.call(this, statement);
+  };
 
-  return Handlebars.parse(template).statements.reduce(collectMsgs, {});
+  GettextExtractor.prototype.SubExpression = function (expression) {
+    extract(expression);
+    Visitor.prototype.SubExpression.call(this, expression);
+  };
+
+  var ast = Handlebars.parse(template);
+  new GettextExtractor().accept(ast);
+
+  return msgs;
 };
 
 module.exports = Parser;

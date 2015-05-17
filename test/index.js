@@ -56,17 +56,25 @@ describe('Parser', function () {
         result.duplicate.references.should.eql([
           {
             filename: undefined,
-            firstLine: 1,
-            firstColumn: 2,
-            lastLine: 1,
-            lastColumn: 15
+            start: {
+              line: 1,
+              column: 0
+            },
+            end: {
+              line: 1,
+              column: 17
+            }
           },
           {
             filename: undefined,
-            firstLine: 2,
-            firstColumn: 2,
-            lastLine: 2,
-            lastColumn: 15
+            start: {
+              line: 2,
+              column: 0
+            },
+            end: {
+              line: 2,
+              column: 17
+            }
           }
         ]);
 
@@ -177,10 +185,14 @@ describe('Parser', function () {
       // references shouldn't get overwritten by 'Foo'
       messages.Hi.references.should.eql([{
         filename: undefined,
-        firstLine: 1,
-        firstColumn: 2,
-        lastColumn: 14,
-        lastLine: 1
+        start: {
+          line: 1,
+          column: 0
+        },
+        end: {
+          line: 1,
+          column: 16
+        }
       }]);
       messages.Hi.fields.references.should.equal('Foo');
 
@@ -255,7 +267,7 @@ describe('Parser', function () {
     it('should return AST', function () {
         var messages = new Parser().parse('{{_ "Hi"}}').messages;
 
-        messages.Hi.ast.type.should.equal('sexpr');
+        messages.Hi.ast.type.should.equal('MustacheStatement');
       });
   });
 });
