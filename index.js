@@ -2,41 +2,7 @@
 
 var Handlebars = require('handlebars');
 
-function Parser (options) {
-  // make new optional
-  if (!(this instanceof Parser)) {
-    return new Parser(options);
-  }
-
-  options = options || {};
-
-  var identifiers = options.identifiers || Parser.DEFAULT_IDENTIFIERS;
-
-  Object.keys(identifiers).forEach(function (id) {
-    if (identifiers[id].indexOf('msgid') === -1) {
-      throw new Error('Every id must have a msgid parameter, but "' + id + '" doesn\'t have one');
-    }
-  });
-
-  this.identifiers = identifiers || Parser.DEFAULT_IDENTIFIERS;
-
-  // domain to be used when none is specified
-  if (options.defaultDomain || options.defaultDomain === '') { // empty domain is a valid domain
-    this.defaultDomain = options.defaultDomain;
-  } else {
-    this.defaultDomain = 'messages';
-  }
-
-  // name of subexpressions to extract comments from
-  this.commentIdentifiers = options.commentIdentifiers || ['gettext-comment'];
-  if (!Array.isArray(this.commentIdentifiers)) {
-    this.commentIdentifiers = [this.commentIdentifiers];
-  }
-
-  this.strings = {};
-}
-
-Parser.DEFAULT_IDENTIFIERS = (function () {
+var DEFAULT_IDENTIFIERS = (function () {
   // n and category shouldn't be needed in your PO files, but we try to mirror
   // the gettext API as much as possible
   var specs = {
@@ -62,32 +28,39 @@ Parser.DEFAULT_IDENTIFIERS = (function () {
 })();
 
 // Same as what Jed.js uses
-Parser.CONTEXT_DELIMITER = String.fromCharCode(4);
+var CONTEXT_DELIMITER = String.fromCharCode(4);
 
-Parser.messageToKey = function (msgid, msgctxt) {
-  return msgctxt ? msgctxt + Parser.CONTEXT_DELIMITER + msgid : msgid;
-};
+function messageToKey (msgid, msgctxt) {
+  return msgctxt ? msgctxt + CONTEXT_DELIMITER + msgid : msgid;
+}
 
 /**
  * Given a Handlebars template string returns the list of i18n strings.
  *
- * @param template {string} The content of a HBS template.
- * @param {object} options Currently just filename
- * @return {object} The list of translatable strings, the line(s) on which each appears and an optional plural form.
+ * @param template {string} Handlebars template
+ * @param {object} options
+ * @return {object} set of translatable strings
  */
-Parser.prototype.parse = function (template, options) {
+function xgettext (template, options) {
   options = options || {};
+  var identifiers = options.identifiers || DEFAULT_IDENTIFIERS;
+  var defaultDomain = options.defaultDomain || 'messages';
+  var commentIdentifiers = options.commentIdentifiers || ['gettext-comment'];
   var filename = options.filename;
+
+  // sanity check identifiers
+  Object.keys(identifiers).forEach(function (id) {
+    if (identifiers[id].indexOf('msgid') === -1) {
+      throw new Error('Every id must have a msgid parameter, but "' + id + '" doesn\'t have one');
+    }
+  });
+
   var msgs = {};
 
   var Visitor = Handlebars.Visitor;
 
   function GettextExtractor () {}
   GettextExtractor.prototype = new Visitor();
-
-  var identifiers = this.identifiers;
-  var defaultDomain = this.defaultDomain;
-  var commentIdentifiers = this.commentIdentifiers;
 
   var extract = function (statement) {
     var path = statement.path;
@@ -134,7 +107,7 @@ Parser.prototype.parse = function (template, options) {
       }
 
       msgs[domain] = msgs[domain] || {};
-      var key = Parser.messageToKey(msgid, context);
+      var key = messageToKey(msgid, context);
       msgs[domain][key] = msgs[domain][key] || {
         extractedComments: [],
         references: [],
@@ -191,7 +164,7 @@ Parser.prototype.parse = function (template, options) {
           }
         }
 
-        var knownFields = Parser.DEFAULT_IDENTIFIERS.dcnpgettext;
+        var knownFields = DEFAULT_IDENTIFIERS.dcnpgettext;
         if (knownFields.indexOf(prop) !== -1) {
           // field name doesn't conflict with anything, we can save it at top level
           message[prop] = params[i].value;
@@ -240,6 +213,10 @@ Parser.prototype.parse = function (template, options) {
   new GettextExtractor().accept(ast);
 
   return msgs;
-};
+}
 
-module.exports = Parser;
+xgettext.DEFAULT_IDENTIFIERS = DEFAULT_IDENTIFIERS;
+xgettext.CONTEXT_DELIMITER = CONTEXT_DELIMITER;
+xgettext.messageToKey = messageToKey;
+
+module.exports = xgettext;
