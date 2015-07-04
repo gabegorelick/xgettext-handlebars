@@ -219,6 +219,10 @@ describe('xgettext()', function () {
     xgettext('{{_ variable}}').should.have.keys();
   });
 
+  it('should return {} if there are no strings', function () {
+    xgettext('{{randomHelper ""}}').should.have.keys();
+  });
+
   describe('comments', function () {
     it('should extract comments', function () {
       var result = xgettext('{{_ "Hi" (gettext-comment "comment")}}').messages;
