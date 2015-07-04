@@ -74,6 +74,11 @@ function xgettext (template, options) {
     var msgidParam = params[spec.indexOf('msgid')];
 
     if (msgidParam) { // don't extract {{gettext}} without param
+      if (msgidParam.type !== 'StringLiteral') {
+        // don't extract variables
+        return;
+      }
+
       var msgid = msgidParam.value;
       var contextIndex = spec.indexOf('msgctxt');
 

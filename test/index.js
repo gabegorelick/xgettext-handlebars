@@ -207,6 +207,18 @@ describe('xgettext()', function () {
     });
   });
 
+  // if we return the corresponding AST node with an extracted string,
+  // consumers can pretty much do anything they want
+  it('should return AST', function () {
+    var messages = xgettext('{{_ "Hi"}}').messages;
+
+    messages.Hi.ast.type.should.equal('MustacheStatement');
+  });
+
+  it('should not extract non-literals', function () {
+    xgettext('{{_ variable}}').should.have.keys();
+  });
+
   describe('comments', function () {
     it('should extract comments', function () {
       var result = xgettext('{{_ "Hi" (gettext-comment "comment")}}').messages;
@@ -236,13 +248,5 @@ describe('xgettext()', function () {
 
       result.Hi.extractedComments.should.eql(['comment']);
     });
-  });
-
-  // if we return the corresponding AST node with an extracted string,
-  // consumers can pretty much do anything they want
-  it('should return AST', function () {
-    var messages = xgettext('{{_ "Hi"}}').messages;
-
-    messages.Hi.ast.type.should.equal('MustacheStatement');
   });
 });
