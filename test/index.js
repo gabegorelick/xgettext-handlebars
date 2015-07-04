@@ -215,12 +215,26 @@ describe('xgettext()', function () {
     messages.Hi.ast.type.should.equal('MustacheStatement');
   });
 
-  it('should not extract non-literals', function () {
-    xgettext('{{_ variable}}').should.have.keys();
-  });
-
   it('should return {} if there are no strings', function () {
     xgettext('{{randomHelper ""}}').should.have.keys();
+  });
+
+  describe('arguments that are not string literals', function () {
+    it('should not extract non-literal msgids', function () {
+      xgettext('{{_ variable}}').should.have.keys();
+    });
+
+    it('should not extract non-literal plurals', function () {
+      xgettext('{{n_ "boat" boats numBoats}}').should.have.keys();
+    });
+
+    it('should not extract non-literal contexts', function () {
+      xgettext('{{p_ context "whatever"}}').should.have.keys();
+    });
+
+    it('should not extract non-literal domains', function () {
+      xgettext('{{d_ domain "whatever"}}').should.have.keys();
+    });
   });
 
   describe('comments', function () {

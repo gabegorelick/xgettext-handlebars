@@ -91,7 +91,9 @@ function xgettext (template, options) {
           throw new Error('Expected a context for msgid "' + msgid + '" but none was given');
         }
         if (contextParam.type !== 'StringLiteral') {
-          throw new Error('Context must be a string literal (msgid "' + msgid + '")');
+          // Don't extract if context isn't a string literal.
+          // Hopefully they've statically defined this message somewhere else
+          return;
         }
 
         context = contextParam.value;
@@ -105,22 +107,15 @@ function xgettext (template, options) {
           throw new Error('Expected a domain for msgid "' + msgid + '" but none was given');
         }
         if (domainParam.type !== 'StringLiteral') {
-          throw new Error('Domain must be a string literal (msgid "' + msgid + '")');
+          // don't extract if domain isn't a string literal
+          return;
         }
 
         domain = domainParam.value;
       }
 
-      msgs[domain] = msgs[domain] || {};
       var key = messageToKey(msgid, context);
-      msgs[domain][key] = msgs[domain][key] || {
-        extractedComments: [],
-        references: [],
-        fields: {} // extracted fields get placed here so they don't clobber anything
-      };
-      var message = msgs[domain][key];
 
-      // make sure plural forms match
       var pluralIndex = spec.indexOf('msgid_plural');
       if (pluralIndex !== -1) {
         var pluralParam = params[pluralIndex];
@@ -128,16 +123,29 @@ function xgettext (template, options) {
           throw new Error('No plural specified for msgid "' + msgid + '"');
         }
         if (pluralParam.type !== 'StringLiteral') {
-          throw new Error('Plural must be a string literal for msgid ' + msgid);
+          return;
         }
 
-        var plural = pluralParam.value;
-        var existingPlural = message.msgid_plural;
-        if (plural && existingPlural && existingPlural !== plural) {
-          throw new Error('Incompatible plural definitions for msgid "' + msgid +
-          '" ("' + message.msgid_plural + '" and "' + plural + '")');
+        if (msgs[domain] && msgs[domain][key]) {
+          // there's an existing message, check it's plural form to make sure it matches
+          var plural = pluralParam.value;
+          var existingPlural = msgs[domain][key].msgid_plural;
+
+          if (plural && existingPlural && existingPlural !== plural) {
+            throw new Error('Incompatible plural definitions for msgid "' + msgid +
+              '" ("' + existingPlural + '" and "' + plural + '")');
+          }
         }
       }
+
+      // only add message to catalog after we've sanity checked it
+      msgs[domain] = msgs[domain] || {};
+      msgs[domain][key] = msgs[domain][key] || {
+        extractedComments: [],
+        references: [],
+        fields: {} // extracted fields get placed here so they don't clobber anything
+      };
+      var message = msgs[domain][key];
 
       // return AST so consumer has as much information as possible
       message.ast = statement;
@@ -159,14 +167,6 @@ function xgettext (template, options) {
         var param = params[i];
         if (!param) {
           return;
-        }
-
-        if (param.type !== 'StringLiteral') {
-          if (prop === 'domain' || prop === 'msgid' || prop === 'msgctxt' || prop === 'msgid_plural') {
-            // Non-string literals mean you're extracting a variable or something else
-            // funky that doesn't gel with gettext-style workflows
-            console.warn('WARNING: Extracting non-string literal `' + param.value + '`');
-          }
         }
 
         var knownFields = DEFAULT_IDENTIFIERS.dcnpgettext;
