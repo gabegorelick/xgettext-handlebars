@@ -104,6 +104,13 @@ describe('xgettext()', function () {
     });
   });
 
+  it('should not throw an error if plurals are not mismatched', function () {
+    var messages = xgettext('{{n_ "boat" "boats" numBoats}} {{n_ "boat" "boats" variable}}').messages;
+    Object.keys(messages).length.should.equal(1);
+    messages.boat.references.length.should.equal(2);
+    messages.boat.msgid_plural.should.equal('boats');
+  });
+
   it('should recognize subexpressions', function (done) {
     fs.readFile(__dirname + '/fixtures/subexpression.hbs', {encoding: 'utf8'}, function (err, data) {
       if (err) {
@@ -219,6 +226,52 @@ describe('xgettext()', function () {
     xgettext('{{randomHelper ""}}').should.have.keys();
   });
 
+  it('should throw error if spec does not have msigd', function () {
+    (function () {
+      return xgettext('{{_ ""}}', {
+        identifiers: {
+          '_': ['foo']
+        }
+      });
+    }).should.throw();
+  });
+
+  it('should throw an error if message does not have msgid', function () {
+    (function () {
+      xgettext('{{_}}');
+    }).should.throw();
+  });
+
+  it('should throw an error if context was expected but not given', function () {
+    (function () {
+      xgettext('{{i18n "msigd"}}', {
+        identifiers: {
+          i18n: ['msgid', 'msgctxt']
+        }
+      });
+    }).should.throw();
+  });
+
+  it('should throw an error if domain was expected but not given', function () {
+    (function () {
+      xgettext('{{i18n "msigd"}}', {
+        identifiers: {
+          i18n: ['msgid', 'domain']
+        }
+      });
+    }).should.throw();
+  });
+
+  it('should throw an error if plural was expected but not given', function () {
+    (function () {
+      xgettext('{{i18n "msigd"}}', {
+        identifiers: {
+          i18n: ['msgid', 'msgid_plural']
+        }
+      });
+    }).should.throw();
+  });
+
   describe('arguments that are not string literals', function () {
     it('should not extract non-literal msgids', function () {
       xgettext('{{_ variable}}').should.have.keys();
@@ -265,6 +318,18 @@ describe('xgettext()', function () {
       }).messages;
 
       result.Hi.extractedComments.should.eql(['comment']);
+    });
+
+    it('should throw an error if comment has no arguments', function () {
+      (function () {
+        xgettext('{{_ "Hi" (gettext-comment)}}');
+      }).should.throw();
+    });
+
+    it('should throw an error if comment is not a string literal', function () {
+      (function () {
+        xgettext('{{_ "Hi" (gettext-comment variable)}}');
+      }).should.throw();
     });
   });
 });
