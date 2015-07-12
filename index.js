@@ -1,38 +1,7 @@
 'use strict';
 
 var Handlebars = require('handlebars');
-
-var DEFAULT_IDENTIFIERS = (function () {
-  // n and category shouldn't be needed in your PO files, but we try to mirror
-  // the gettext API as much as possible
-  var specs = {
-    gettext: ['msgid'],
-    dgettext: ['domain', 'msgid'],
-    dcgettext: ['domain', 'msgid', 'category'],
-    ngettext: ['msgid', 'msgid_plural', 'n'],
-    dngettext: ['domain', 'msgid', 'msgid_plural', 'n'],
-    dcngettext: ['domain', 'msgid', 'msgid_plural', 'n', 'category'],
-    pgettext: ['msgctxt', 'msgid'],
-    dpgettext: ['domain', 'msgctxt', 'msgid'],
-    npgettext: ['msgctxt', 'msgid', 'msgid_plural', 'n'],
-    dnpgettext: ['domain', 'msgctxt', 'msgid', 'msgid_plural', 'n'],
-    dcnpgettext: ['domain', 'msgctxt', 'msgid', 'msgid_plural', 'n', 'category']
-  };
-
-  return Object.keys(specs).reduce(function (identifiers, id) {
-    // Add commonly used shorthands for each helper:
-    // gettext -> _, dgettext -> d_, dcgettext -> dc_, etc.
-    identifiers[id.replace('gettext', '_')] = identifiers[id];
-    return identifiers;
-  }, specs);
-})();
-
-// Same as what Jed.js uses
-var CONTEXT_DELIMITER = String.fromCharCode(4);
-
-function messageToKey (msgid, msgctxt) {
-  return msgctxt ? msgctxt + CONTEXT_DELIMITER + msgid : msgid;
-}
+var Catalog = require('gettext-catalog');
 
 /**
  * Given a Handlebars template string returns the list of i18n strings.
@@ -43,7 +12,7 @@ function messageToKey (msgid, msgctxt) {
  */
 function xgettext (template, options) {
   options = options || {};
-  var identifiers = options.identifiers || DEFAULT_IDENTIFIERS;
+  var identifiers = options.identifiers || Catalog.DEFAULT_IDENTIFIERS;
   var defaultDomain = options.defaultDomain || 'messages';
   var commentIdentifiers = options.commentIdentifiers || ['gettext-comment'];
   var filename = options.filename;
@@ -117,7 +86,7 @@ function xgettext (template, options) {
       domain = domainParam.value;
     }
 
-    var key = messageToKey(msgid, context);
+    var key = Catalog.messageToKey(msgid, context);
 
     var pluralIndex = spec.indexOf('msgid_plural');
     if (pluralIndex !== -1) {
@@ -172,7 +141,7 @@ function xgettext (template, options) {
         return;
       }
 
-      var knownFields = DEFAULT_IDENTIFIERS.dcnpgettext;
+      var knownFields = Catalog.DEFAULT_IDENTIFIERS.dcnpgettext;
       if (knownFields.indexOf(prop) !== -1) {
         // field name doesn't conflict with anything, we can save it at top level
         message[prop] = params[i].value;
@@ -223,9 +192,5 @@ function xgettext (template, options) {
 
   return msgs;
 }
-
-xgettext.DEFAULT_IDENTIFIERS = DEFAULT_IDENTIFIERS;
-xgettext.CONTEXT_DELIMITER = CONTEXT_DELIMITER;
-xgettext.messageToKey = messageToKey;
 
 module.exports = xgettext;

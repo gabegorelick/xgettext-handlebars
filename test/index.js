@@ -3,6 +3,7 @@
 var xgettext = require('..');
 var fs = require('fs');
 var should = require('should');
+var Catalog = require('gettext-catalog');
 
 describe('xgettext()', function () {
   it('should return results', function (done) {
@@ -190,20 +191,20 @@ describe('xgettext()', function () {
 
       var result = xgettext(data).messages;
 
-      var key = xgettext.messageToKey('pgettext_msgid', 'pgettext context');
+      var key = Catalog.messageToKey('pgettext_msgid', 'pgettext context');
       result.should.containEql(key);
       result[key].msgctxt.should.equal('pgettext context');
 
-      key = xgettext.messageToKey('p_msgid', 'p_ context');
+      key = Catalog.messageToKey('p_msgid', 'p_ context');
       result.should.containEql(key);
       result[key].msgctxt.should.equal('p_ context');
 
-      key = xgettext.messageToKey('file', 'noun');
+      key = Catalog.messageToKey('file', 'noun');
       result.should.containEql(key);
       result[key].msgctxt.should.equal('noun');
       result[key].msgid_plural.should.equal('files');
 
-      key = xgettext.messageToKey('file', 'verb');
+      key = Catalog.messageToKey('file', 'verb');
       result.should.containEql(key);
       result[key].msgctxt.should.equal('verb');
       result[key].msgid_plural.should.equal('files');
