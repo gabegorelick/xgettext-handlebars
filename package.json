@@ -30,12 +30,11 @@
     "handlebars": "^4.0.5"
   },
   "devDependencies": {
-    "jscs": "^1.12.0",
-    "jshint": "^2.6.3",
+    "eslint": "^2.10.2",
     "mocha": "^2.2.1",
     "should": "^8.2.2"
   },
   "scripts": {
-    "test": "jscs *.js test/*.js && jshint *.js test/*.js && mocha"
+    "test": "eslint *.js test/*.js && mocha"
   }
 }

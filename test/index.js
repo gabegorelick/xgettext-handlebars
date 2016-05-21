@@ -33,28 +33,28 @@ describe('xgettext()', function () {
       var result = xgettext(data).messages;
 
       result.duplicate.references.should.eql([
-      {
-        filename: undefined,
-        start: {
-          line: 1,
-          column: 0
+        {
+          filename: undefined,
+          start: {
+            line: 1,
+            column: 0
+          },
+          end: {
+            line: 1,
+            column: 17
+          }
         },
-        end: {
-          line: 1,
-          column: 17
+        {
+          filename: undefined,
+          start: {
+            line: 2,
+            column: 0
+          },
+          end: {
+            line: 2,
+            column: 17
+          }
         }
-      },
-      {
-        filename: undefined,
-        start: {
-          line: 2,
-          column: 0
-        },
-        end: {
-          line: 2,
-          column: 17
-        }
-      }
       ]);
 
       result.unique.references.length.should.equal(1);
@@ -87,7 +87,7 @@ describe('xgettext()', function () {
       var result = xgettext(data).messages;
 
       Object.keys(result).length.should.equal(2);
-      result['default'].msgid_plural.should.equal('defaults');
+      result.default.msgid_plural.should.equal('defaults');
 
       done();
     });
@@ -99,7 +99,9 @@ describe('xgettext()', function () {
         throw err;
       }
 
-      (function () {xgettext(data);}).should.throw();
+      (function () {
+        xgettext(data);
+      }).should.throw();
 
       done();
     });
@@ -231,7 +233,7 @@ describe('xgettext()', function () {
     (function () {
       return xgettext('{{_ ""}}', {
         identifiers: {
-          '_': ['foo']
+          _: ['foo']
         }
       });
     }).should.throw();
